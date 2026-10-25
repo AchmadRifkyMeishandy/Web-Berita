@@ -1,0 +1,19 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# PHP and JavaScript dependencies
+/vendor/
+/node_modules/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
