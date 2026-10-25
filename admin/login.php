@@ -30,7 +30,7 @@ $username = isset($_GET['username']) && is_string($_GET['username']) ? $_GET['us
     <title>Login Admin — Berita Indonesia</title>
     <link href="css/styles.css" rel="stylesheet">
 </head>
-<body class="bg-primary">
+<body class="admin-login-page">
     <div id="layoutAuthentication">
         <div id="layoutAuthentication_content">
             <main>
