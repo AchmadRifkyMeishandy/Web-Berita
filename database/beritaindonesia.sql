@@ -41,15 +41,15 @@ CREATE TABLE `balaskomentar` (
 --
 
 INSERT INTO `balaskomentar` (`id_bk`, `nama_bk`, `isi_bk`, `tanggal_bk`, `kode_k`, `kode_berita`) VALUES
-(1, '', 'Terimakasih Komentarnya', '03 July 2025', '6', '3'),
-(2, '', 'terimakasih sarannya', '03 July 2025', '6', '3'),
-(3, '', '', '03 July 2025', '6', '3'),
-(4, '', 'terimakasih', '03 July 2025', '6', '3'),
-(5, '', 'terimakasih sarannya', '03 July 2025', '6', '3'),
-(6, '', 'wah bagus beritanya', '03 July 2025', '6', '3'),
-(7, '', 'terimakasih sarannya', '03 July 2025', '6', '3'),
-(8, 'defan', 'terimakasih ', '03 July 2025', '3', '6'),
-(9, 'Martin', 'Terimakasih atas balasan anda', '03 July 2025', '4', '6');
+(1, 'Pembaca Demo 01', 'Terima kasih atas komentarnya', '03 July 2025', '6', '3'),
+(2, 'Pembaca Demo 02', 'Terima kasih atas sarannya', '03 July 2025', '6', '3'),
+(3, 'Pembaca Demo 03', 'Terima kasih', '03 July 2025', '6', '3'),
+(4, 'Pembaca Demo 04', 'Terima kasih', '03 July 2025', '6', '3'),
+(5, 'Pembaca Demo 05', 'Terima kasih atas sarannya', '03 July 2025', '6', '3'),
+(6, 'Pembaca Demo 06', 'Terima kasih atas masukannya', '03 July 2025', '6', '3'),
+(7, 'Pembaca Demo 07', 'Terima kasih atas sarannya', '03 July 2025', '6', '3'),
+(8, 'Pembaca Demo 08', 'Terima kasih', '03 July 2025', '3', '6'),
+(9, 'Pembaca Demo 09', 'Terima kasih atas balasannya', '03 July 2025', '4', '6');
 
 -- --------------------------------------------------------
 
@@ -119,9 +119,9 @@ CREATE TABLE `komentar` (
 --
 
 INSERT INTO `komentar` (`id_k`, `isi_k`, `tanggal_k`, `kode_berita`, `nama_k`) VALUES
-(3, 'Wah bagus beritanya', '03 July 2025', '6', 'shandy'),
-(4, 'Berita yang sangat berguna', '03 July 2025', '6', 'Naila'),
-(5, 'Good Words', '03 July 2025', '9', 'Nanta');
+(3, 'Informasi yang menarik', '03 July 2025', '6', 'Pembaca Demo 10'),
+(4, 'Berita yang informatif', '03 July 2025', '6', 'Pembaca Demo 11'),
+(5, 'Terima kasih untuk informasinya', '03 July 2025', '9', 'Pembaca Demo 12');
 
 -- --------------------------------------------------------
 
