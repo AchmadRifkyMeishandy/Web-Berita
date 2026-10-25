@@ -1,118 +1,282 @@
-<?php include "controllers/connect.php"; ?>
-<!DOCTYPE html>
-<html lang="en">
+<?php
+require_once __DIR__ . '/controllers/connect.php';
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+function h($value): string
+{
+    return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+$rawId = $_GET['id_berita'] ?? null;
+$validatedId = filter_var($rawId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+$idBerita = ($validatedId === false || $validatedId === null) ? 0 : (int) $validatedId;
+$kodeBerita = (string) $idBerita;
+$article = null;
+$errors = [];
+
+if ($idBerita > 0) {
+    $articleStatement = mysqli_prepare(
+        $db,
+        "SELECT b.id_berita, b.judul_berita, b.isi_berita, b.tanggal_berita,
+                b.gambar_berita, k.nama_kategori
+         FROM berita AS b
+         LEFT JOIN kategori AS k ON k.id_kategori = b.kode_kategori
+         WHERE b.id_berita = ?
+         LIMIT 1"
+    );
+    if ($articleStatement) {
+        mysqli_stmt_bind_param($articleStatement, 'i', $idBerita);
+        mysqli_stmt_execute($articleStatement);
+        $articleResult = mysqli_stmt_get_result($articleStatement);
+        $article = $articleResult ? mysqli_fetch_assoc($articleResult) : null;
+        mysqli_stmt_close($articleStatement);
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $article) {
+    $postedToken = $_POST['csrf_token'] ?? '';
+    if (!is_string($postedToken) || !hash_equals($_SESSION['csrf_token'], $postedToken)) {
+        $errors[] = 'Sesi formulir sudah tidak berlaku. Muat ulang halaman lalu coba lagi.';
+    } else {
+        $nameInput = $_POST['nama_k'] ?? '';
+        $bodyInput = $_POST['isi_k'] ?? '';
+        $name = is_string($nameInput) ? trim($nameInput) : '';
+        $body = is_string($bodyInput) ? trim($bodyInput) : '';
+        $nameLength = function_exists('mb_strlen') ? mb_strlen($name, 'UTF-8') : strlen($name);
+        $bodyLength = function_exists('mb_strlen') ? mb_strlen($body, 'UTF-8') : strlen($body);
+
+        if ($name === '' || $body === '') {
+            $errors[] = 'Nama dan isi komentar wajib diisi.';
+        } elseif ($nameLength > 255) {
+            $errors[] = 'Nama maksimal 255 karakter.';
+        } elseif ($bodyLength > 10000) {
+            $errors[] = 'Komentar maksimal 10.000 karakter.';
+        } elseif (isset($_POST['tbh'])) {
+            $tanggal = date('d F Y');
+            $insertStatement = mysqli_prepare(
+                $db,
+                "INSERT INTO komentar (nama_k, isi_k, tanggal_k, kode_berita)
+                 VALUES (?, ?, ?, ?)"
+            );
+            if ($insertStatement) {
+                mysqli_stmt_bind_param($insertStatement, 'ssss', $name, $body, $tanggal, $kodeBerita);
+                $saved = mysqli_stmt_execute($insertStatement);
+                mysqli_stmt_close($insertStatement);
+                if ($saved) {
+                    header('Location: detail_berita.php?id_berita=' . $idBerita . '#comments');
+                    exit;
+                }
+            }
+            $errors[] = 'Komentar belum dapat disimpan. Silakan coba lagi.';
+        } elseif (isset($_POST['bls'])) {
+            $rawCommentId = $_POST['kode_k'] ?? null;
+            $validatedCommentId = filter_var($rawCommentId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($validatedCommentId === false || $validatedCommentId === null) {
+                $errors[] = 'Komentar yang ingin dibalas tidak valid.';
+            } else {
+                $commentId = (int) $validatedCommentId;
+                $parentStatement = mysqli_prepare(
+                    $db,
+                    "SELECT id_k FROM komentar WHERE id_k = ? AND kode_berita = ? LIMIT 1"
+                );
+                $parentExists = false;
+                if ($parentStatement) {
+                    mysqli_stmt_bind_param($parentStatement, 'is', $commentId, $kodeBerita);
+                    mysqli_stmt_execute($parentStatement);
+                    $parentResult = mysqli_stmt_get_result($parentStatement);
+                    $parentExists = $parentResult && mysqli_fetch_assoc($parentResult) !== null;
+                    mysqli_stmt_close($parentStatement);
+                }
+
+                if (!$parentExists) {
+                    $errors[] = 'Komentar yang ingin dibalas tidak ditemukan.';
+                } else {
+                    $kodeKomentar = (string) $commentId;
+                    $tanggalBalasan = date('d F Y');
+                    $replyStatement = mysqli_prepare(
+                        $db,
+                        "INSERT INTO balaskomentar (nama_bk, isi_bk, tanggal_bk, kode_k, kode_berita)
+                         VALUES (?, ?, ?, ?, ?)"
+                    );
+                    if ($replyStatement) {
+                        mysqli_stmt_bind_param(
+                            $replyStatement,
+                            'sssss',
+                            $name,
+                            $body,
+                            $tanggalBalasan,
+                            $kodeKomentar,
+                            $kodeBerita
+                        );
+                        $saved = mysqli_stmt_execute($replyStatement);
+                        mysqli_stmt_close($replyStatement);
+                        if ($saved) {
+                            header('Location: detail_berita.php?id_berita=' . $idBerita . '#comments');
+                            exit;
+                        }
+                    }
+                    $errors[] = 'Balasan belum dapat disimpan. Silakan coba lagi.';
+                }
+            }
+        }
+    }
+}
+
+$comments = [];
+$repliesByComment = [];
+if ($article) {
+    $commentStatement = mysqli_prepare(
+        $db,
+        "SELECT id_k, nama_k, isi_k, tanggal_k
+         FROM komentar
+         WHERE kode_berita = ?
+         ORDER BY id_k DESC"
+    );
+    if ($commentStatement) {
+        mysqli_stmt_bind_param($commentStatement, 's', $kodeBerita);
+        mysqli_stmt_execute($commentStatement);
+        $commentResult = mysqli_stmt_get_result($commentStatement);
+        if ($commentResult) {
+            while ($row = mysqli_fetch_assoc($commentResult)) {
+                $comments[] = $row;
+            }
+        }
+        mysqli_stmt_close($commentStatement);
+    }
+
+    $replyStatement = mysqli_prepare(
+        $db,
+        "SELECT id_bk, nama_bk, isi_bk, tanggal_bk, kode_k
+         FROM balaskomentar
+         WHERE kode_berita = ?
+         ORDER BY id_bk ASC"
+    );
+    if ($replyStatement) {
+        mysqli_stmt_bind_param($replyStatement, 's', $kodeBerita);
+        mysqli_stmt_execute($replyStatement);
+        $replyResult = mysqli_stmt_get_result($replyStatement);
+        if ($replyResult) {
+            while ($row = mysqli_fetch_assoc($replyResult)) {
+                $repliesByComment[(string) $row['kode_k']][] = $row;
+            }
+        }
+        mysqli_stmt_close($replyStatement);
+    }
+}
+?>
+<!doctype html>
+<html lang="id">
 <head>
-    <meta charset="utf-8" />
-    <title>Detail Berita</title>
-    <?php include "link.php"; ?>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= $article ? h($article['judul_berita']) . ' — Berita Indonesia' : 'Berita tidak ditemukan — Berita Indonesia'; ?></title>
+    <?php include __DIR__ . '/link.php'; ?>
 </head>
 <body>
+<?php include __DIR__ . '/header.php'; ?>
 
-<?php include "header.php"; ?>
+<main class="news-article">
+    <a class="news-article__back" href="index.php"><i class="bi bi-arrow-left" aria-hidden="true"></i> Kembali ke beranda</a>
 
-<div class="container px-4 px-lg-5">
-    <div class="row gx-4 gx-lg-5 justify-content-center">
-        <div class="col-md-10 col-lg-8 col-xl-7">
-
-            <!-- Tampilkan isi berita -->
-            <?php
-            $konten = mysqli_query($db, "SELECT * FROM berita WHERE id_berita='$_GET[id_berita]'");
-            while($k = mysqli_fetch_array($konten)) {
-                $kategori = mysqli_query($db, "SELECT * FROM kategori WHERE id_kategori='$k[kode_kategori]'");
-                $kat = mysqli_fetch_array($kategori);
-            ?>
-                <div class="post-preview">
-                    <h2>Kategori: <?= $kat['nama_kategori']; ?></h2>
-                    <h3><?= $k['judul_berita']; ?></h3>
-                    <img src="images/<?= $k['gambar_berita']; ?>" width="400" />
-                    <p style="color:gray; font-size:14px;">Posted on <?= $k['tanggal_berita']; ?></p>
-                    <p><?= $k['isi_berita']; ?></p>
+    <?php if (!$article): ?>
+        <?php http_response_code(404); ?>
+        <div class="news-empty">
+            <h1>Berita tidak ditemukan</h1>
+            <p>Tautan yang kamu buka tidak cocok dengan artikel yang tersedia.</p>
+            <a class="news-read-link" href="index.php">Lihat berita terbaru</a>
+        </div>
+    <?php else: ?>
+        <article>
+            <header class="news-article__header">
+                <span class="news-category"><?= h($article['nama_kategori'] ?? 'Umum'); ?></span>
+                <h1><?= h($article['judul_berita']); ?></h1>
+                <div class="news-article__meta">
+                    <i class="bi bi-calendar3" aria-hidden="true"></i>
+                    <?= h($article['tanggal_berita']); ?>
                 </div>
-            <?php } ?>
+            </header>
 
-            <hr />
-            <h4>Komentar</h4>
+            <?php if (!empty($article['gambar_berita'])): ?>
+                <img
+                    class="news-article__cover"
+                    src="images/<?= h(rawurlencode((string) $article['gambar_berita'])); ?>"
+                    alt="<?= h($article['judul_berita']); ?>"
+                    loading="eager">
+            <?php endif; ?>
 
-            <!-- Form komentar utama -->
-            <form action="detail_berita.php?id_berita=<?= $_GET['id_berita']; ?>" method="POST">
-                <input type="text" name="nama_k" placeholder="Nama Anda" required style="width:100%; margin-bottom:5px;" />
-                <input type="hidden" name="kode_berita" value="<?= $_GET['id_berita']; ?>" />
-                <textarea name="isi_k" placeholder="Tulis komentar..." required style="width:100%; margin-bottom:5px;"></textarea>
-                <input type="submit" name="tbh" value="Kirim Komentar" style="width:100%;" />
+            <div class="news-article__content"><?= nl2br(h($article['isi_berita'])); ?></div>
+        </article>
+
+        <section class="news-comments" id="comments" aria-labelledby="comments-heading">
+            <h2 id="comments-heading">Diskusi pembaca</h2>
+            <p class="news-comments__intro">Sampaikan pendapat dengan sopan dan tetap menghargai pembaca lain.</p>
+
+            <?php if ($errors): ?>
+                <div class="news-alert" role="alert">
+                    <?php foreach ($errors as $error): ?>
+                        <p><?= h($error); ?></p>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <form class="news-form" action="detail_berita.php?id_berita=<?= $idBerita; ?>#comments" method="post">
+                <input type="hidden" name="csrf_token" value="<?= h($_SESSION['csrf_token']); ?>">
+                <label for="nama-komentar">Nama</label>
+                <input id="nama-komentar" type="text" name="nama_k" maxlength="255" autocomplete="name" required>
+                <label for="isi-komentar">Komentar</label>
+                <textarea id="isi-komentar" name="isi_k" maxlength="10000" required placeholder="Tulis komentarmu di sini..."></textarea>
+                <button type="submit" name="tbh" value="1"><i class="bi bi-chat-dots" aria-hidden="true"></i> Kirim komentar</button>
             </form>
 
-            <hr />
+            <?php if ($comments): ?>
+                <div class="news-comment-list">
+                    <?php foreach ($comments as $comment): ?>
+                        <?php $commentId = (string) $comment['id_k']; ?>
+                        <article class="news-comment">
+                            <div class="news-comment__top">
+                                <strong><?= h($comment['nama_k']); ?></strong>
+                                <span class="news-comment__date"><?= h($comment['tanggal_k']); ?></span>
+                            </div>
+                            <p class="news-comment__text"><?= nl2br(h($comment['isi_k'])); ?></p>
 
-            <!-- Tampilkan komentar & balasannya -->
-            <?php
-            $komentar = mysqli_query($db, "SELECT * FROM komentar WHERE kode_berita='$_GET[id_berita]' ORDER BY id_k DESC");
-            while($kom = mysqli_fetch_array($komentar)) {
-            ?>
-                <p><b><?= $kom['nama_k']; ?></b> <span style="font-size:12px; color:gray;"><?= $kom['tanggal_k']; ?></span></p>
-                <p><?= $kom['isi_k']; ?></p>
+                            <?php foreach (($repliesByComment[$commentId] ?? []) as $reply): ?>
+                                <div class="news-comment__reply">
+                                    <div class="news-comment__top">
+                                        <strong><?= h($reply['nama_bk']); ?></strong>
+                                        <span class="news-comment__date"><?= h($reply['tanggal_bk']); ?></span>
+                                    </div>
+                                    <p class="news-comment__text"><?= nl2br(h($reply['isi_bk'])); ?></p>
+                                </div>
+                            <?php endforeach; ?>
 
-                <!-- Tampilkan balasan -->
-                <div style="margin-left:20px; background:#f9f9f9; padding:10px; border-radius:5px;">
-                    <?php
-                    $balas = mysqli_query($db, "SELECT * FROM balaskomentar WHERE kode_k='$kom[id_k]' ORDER BY id_bk ASC");
-                    while($b = mysqli_fetch_array($balas)) {
-                    ?>
-                        <p style="font-size:13px;"><b><?= $b['nama_bk']; ?></b> <span style="font-size:11px; color:gray;"><?= $b['tanggal_bk']; ?></span></p>
-                        <p style="font-size:13px;"><?= $b['isi_bk']; ?></p>
-                        <hr />
-                    <?php } ?>
+                            <form class="news-form news-comment__reply" action="detail_berita.php?id_berita=<?= $idBerita; ?>#comments" method="post">
+                                <input type="hidden" name="csrf_token" value="<?= h($_SESSION['csrf_token']); ?>">
+                                <input type="hidden" name="kode_k" value="<?= (int) $comment['id_k']; ?>">
+                                <label for="nama-balasan-<?= (int) $comment['id_k']; ?>">Nama untuk balasan</label>
+                                <input id="nama-balasan-<?= (int) $comment['id_k']; ?>" type="text" name="nama_k" maxlength="255" autocomplete="name" required>
+                                <label for="isi-balasan-<?= (int) $comment['id_k']; ?>">Balasan</label>
+                                <textarea id="isi-balasan-<?= (int) $comment['id_k']; ?>" name="isi_k" maxlength="10000" required placeholder="Tulis balasan..."></textarea>
+                                <button type="submit" name="bls" value="1"><i class="bi bi-reply" aria-hidden="true"></i> Balas komentar</button>
+                            </form>
+                        </article>
+                    <?php endforeach; ?>
                 </div>
+            <?php else: ?>
+                <div class="news-empty" style="margin-top: 24px;">
+                    <h3>Jadilah pembaca pertama yang berdiskusi</h3>
+                    <p>Belum ada komentar untuk artikel ini.</p>
+                </div>
+            <?php endif; ?>
+        </section>
+    <?php endif; ?>
+</main>
 
-                <!-- Form balasan komentar -->
-                <form action="detail_berita.php?id_berita=<?= $_GET['id_berita']; ?>" method="POST" style="margin-left:20px; margin-top:10px;">
-                    <input type="text" name="nama_k" placeholder="Nama Anda" required style="width:100%; margin-bottom:5px; font-size:12px;" />
-                    <textarea name="isi_k" placeholder="Tulis balasan..." required style="width:100%; font-size:12px; margin-bottom:5px;"></textarea>
-                    <input type="hidden" name="kode_k" value="<?= $kom['id_k']; ?>" />
-                    <input type="hidden" name="kode_b" value="<?= $_GET['id_berita']; ?>" />
-                    <input type="submit" name="bls" value="Balas Komentar" style="width:100%; font-size:12px;" />
-                </form>
-
-                <hr />
-            <?php } ?>
-
-        </div>
-    </div>
-</div>
-
-<!-- Proses Simpan Komentar -->
-<?php
-if (@$_POST['tbh']) {
-    $nama_k = $_POST['nama_k'];
-    $isi_k = $_POST['isi_k'];
-    $kode_berita = $_POST['kode_berita'];
-    $tanggal = date('d F Y');
-
-    $query = "INSERT INTO komentar (nama_k, isi_k, tanggal_k, kode_berita)
-              VALUES ('$nama_k', '$isi_k', '$tanggal', '$kode_berita')";
-    mysqli_query($db, $query);
-    echo "<script>window.location.href='detail_berita.php?id_berita=$kode_berita';</script>";
-}
-?>
-
-<!-- Proses Simpan Balasan -->
-<?php
-if (@$_POST['bls']) {
-    $nama_bk = $_POST['nama_k'];
-    $isi_bk = $_POST['isi_k'];
-    $kode_k = $_POST['kode_k'];         // id_k komentar
-    $kode_berita = $_POST['kode_b'];    // id_berita
-    $tanggal_bk = date('d F Y');
-
-    $query = "INSERT INTO balaskomentar (nama_bk, isi_bk, tanggal_bk, kode_k, kode_berita)
-              VALUES ('$nama_bk', '$isi_bk', '$tanggal_bk', '$kode_k', '$kode_berita')";
-    mysqli_query($db, $query);
-    echo "<script>window.location.href='detail_berita.php?id_berita=$kode_berita';</script>";
-}
-?>
-
-<?php include "footer.php"; ?>
-
-<!-- JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<?php include __DIR__ . '/footer.php'; ?>
 </body>
 </html>
