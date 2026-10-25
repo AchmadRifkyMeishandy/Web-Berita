@@ -37,7 +37,8 @@ if (!$invalidCategory && ($categoryId === null || $categoryName !== null)) {
              ORDER BY b.id_berita DESC"
         );
         if ($articleStatement) {
-            mysqli_stmt_bind_param($articleStatement, 'i', $categoryId);
+            $categoryIdString = (string) $categoryId;
+            mysqli_stmt_bind_param($articleStatement, 's', $categoryIdString);
             mysqli_stmt_execute($articleStatement);
             $articleResult = mysqli_stmt_get_result($articleStatement);
             if ($articleResult) {
