@@ -1,0 +1,204 @@
+:root {
+  --admin-ink: #14283f;
+  --admin-muted: #6b7c90;
+  --admin-navy: #102c4b;
+  --admin-blue: #1d5b8f;
+  --admin-page: #f4f7fb;
+  --admin-line: #e1e8f0;
+  --admin-radius: 18px;
+}
+
+body.sb-nav-fixed {
+  color: var(--admin-ink);
+  background: var(--admin-page);
+  font-family: "Segoe UI", Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.sb-topnav.navbar {
+  min-height: 66px;
+  background: var(--admin-navy) !important;
+  box-shadow: 0 5px 22px rgba(16, 44, 75, 0.14);
+}
+
+.sb-topnav .navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 66px;
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.sb-topnav .navbar-brand::before {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  margin-right: 10px;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--admin-navy);
+  background: #f7cb75;
+  content: "BI";
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+}
+
+.sb-topnav .nav-link {
+  color: rgba(255,255,255,.82);
+}
+
+.sb-topnav .nav-link:hover,
+.sb-topnav .nav-link:focus {
+  color: #fff;
+}
+
+#sidebarToggle {
+  border-radius: 10px;
+  color: rgba(255,255,255,.92);
+}
+
+#sidebarToggle:hover {
+  background: rgba(255,255,255,.1);
+}
+
+#layoutSidenav {
+  min-width: 0;
+  background: var(--admin-page);
+}
+
+.sb-sidenav-dark {
+  background: var(--admin-navy);
+}
+
+.sb-sidenav-dark .sb-sidenav-menu .nav-link {
+  margin: 3px 10px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  color: rgba(255,255,255,.72);
+  font-size: .9rem;
+  font-weight: 600;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.sb-sidenav-dark .sb-sidenav-menu .nav-link:hover,
+.sb-sidenav-dark .sb-sidenav-menu .nav-link.active {
+  color: #fff;
+  background: rgba(255,255,255,.11);
+}
+
+.sb-sidenav-dark .sb-nav-link-icon {
+  color: #f7cb75;
+}
+
+.sb-sidenav-dark .sb-sidenav-footer {
+  color: rgba(255,255,255,.8);
+  background: rgba(0,0,0,.15);
+}
+
+#layoutSidenav_content {
+  min-width: 0;
+  background: var(--admin-page);
+}
+
+#layoutSidenav_content main .container-fluid {
+  max-width: 1440px;
+  padding-top: 22px;
+  padding-bottom: 28px;
+}
+
+#layoutSidenav_content h1 {
+  color: var(--admin-ink);
+  font-size: clamp(1.65rem, 2.5vw, 2.15rem);
+  font-weight: 800;
+  letter-spacing: -.045em;
+}
+
+#layoutSidenav_content .card {
+  overflow: hidden;
+  border: 1px solid var(--admin-line);
+  border-radius: var(--admin-radius);
+  background: #fff;
+  box-shadow: 0 9px 28px rgba(15, 43, 73, .045);
+}
+
+#layoutSidenav_content .card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--admin-line);
+  background: #fff;
+  color: var(--admin-ink);
+  font-weight: 750;
+}
+
+#layoutSidenav_content .card-body {
+  padding: 20px;
+}
+
+#layoutSidenav_content .btn {
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+#layoutSidenav_content .form-control,
+#layoutSidenav_content .form-select {
+  border-color: #d5e0eb;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+#layoutSidenav_content .form-control:focus,
+#layoutSidenav_content .form-select:focus {
+  border-color: #6ca0cb;
+  box-shadow: 0 0 0 4px rgba(29, 91, 143, .1);
+}
+
+#datatablesSimple,
+#layoutSidenav_content table {
+  width: 100%;
+  color: #344c64;
+}
+
+#datatablesSimple thead th,
+#layoutSidenav_content table thead th {
+  color: #546a80;
+  background: #f5f8fb;
+  font-size: .77rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+#layoutSidenav_content table td,
+#layoutSidenav_content table th {
+  padding: 12px 13px;
+  border-color: #edf1f5;
+  vertical-align: middle;
+}
+
+#layoutSidenav_content table tbody tr:hover {
+  background: #f8fbfe;
+}
+
+#layoutSidenav_content a:not(.btn) {
+  text-underline-offset: 3px;
+}
+
+#layoutSidenav_content footer {
+  border-top: 1px solid var(--admin-line);
+  background: #fff !important;
+}
+
+@media (max-width: 767.98px) {
+  #layoutSidenav_content main .container-fluid {
+    padding: 16px 14px 24px;
+  }
+
+  #layoutSidenav_content .card-body {
+    padding: 14px;
+  }
+
+  #layoutSidenav_content table {
+    font-size: .82rem;
+  }
+}
