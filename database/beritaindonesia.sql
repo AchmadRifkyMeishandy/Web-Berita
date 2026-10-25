@@ -143,7 +143,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id_user`, `username`, `password`, `level_user`, `nama_user`, `foto_user`) VALUES
-(1, 'demo_admin', '$2y$12$L88NPMjClMYhPE1so4QBYOx7sO9EsjbjW0dXQAMIl3egTlfcpO5PC', 'admin', 'Admin Demo', 'default');
+(1, 'demo_admin', '$2y$12$pITsMrBhqtdAZtqTfUlybOmd1LrcGidfeepZOz0CEPeJXmpJtNl9W', 'admin', 'Admin Demo', 'default');
 
 --
 -- Indexes for dumped tables
