@@ -1,110 +1,81 @@
 <?php
-	@session_start();
-	include '../controllers/connect.php';
-	if(@$_SESSION['admin']){
+session_start();
+
+if (!empty($_SESSION['admin'])) {
+    header('Location: index.php');
+    exit;
+}
+
+function admin_h($value): string
+{
+    return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+$notice = '';
+$noticeType = 'warning';
+if (isset($_GET['notif'])) {
+    if ($_GET['notif'] === 'invalid') {
+        $notice = 'Username atau password tidak sesuai.';
+    } elseif ($_GET['notif'] === 'error') {
+        $notice = 'Login belum dapat diproses. Silakan coba lagi.';
+    }
+}
+$username = isset($_GET['username']) && is_string($_GET['username']) ? $_GET['username'] : '';
 ?>
-    <script language="javascript">  
- window.location="index.php";
- </script>';
-<?php
-    }else{
-?>
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta name="description" content="" />
-        <meta name="author" content="" />
-        <title>Login -  Admin Berita</title>
-        <link href="css/styles.css" rel="stylesheet" />
-        <script src="https://use.fontawesome.com/releases/v6.1.0/js/all.js" crossorigin="anonymous"></script>
-    </head>
-    <body class="bg-primary">
-        <div id="layoutAuthentication">
-            <div id="layoutAuthentication_content">
-                <main>
-                    <div class="container">
-                        <div class="row justify-content-center">
-                            <div class="col-lg-5">
-                                <div class="card shadow-lg border-0 rounded-lg mt-5">
-                                    <div class="card-header"><h3 class="text-center font-weight-light my-4">Login</h3></div>
-                                    <div class="card-body">
-                                    <table bgcolor="red" width="100%" style="margin-top:-20px; margin-bottom:20px;">
-<tr>
-    <td> 
-<font style="color:#FFF; font-weight:normal;">
-<?php
-    if(@$_GET['notif']=='username')
-    {
-        echo "Maaf username anda tidak terdaftar";
-    }
-    else if(@$_GET['notif']=='password')
-    {
-        echo "Maaf password anda salah";
-    }
-    if (isset($_GET['username']))
-    {
-        $username=$_GET['username'];
-    }
-    else
-    {
-        $username="";
-    }
-?>
-</font>
-</td>
-</tr>
-</table>
-                                        <form  method="GET" action="../controllers/login_admin.php">
-                                            <div class="form-floating mb-3">
-                                                <input class="form-control"required name="username" value="<?php echo $username;?>" id="inputEmail" type="text" placeholder="name@example.com" />
-                                                <label for="inputEmail">username</label>
-                                            </div>
-                                            <div class="form-floating mb-3">
-                                                <input class="form-control"required name="password" id="inputPassword" type="password" placeholder="Password" />
-                                                <label for="inputPassword">Password</label>
-                                            </div>
-                                            <div class="form-check mb-3">
-                                                <input class="form-check-input" id="inputRememberPassword" type="checkbox" value="" />
-                                                <label class="form-check-label" for="inputRememberPassword">Remember Password</label>
-                                            </div>
-                                            <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
-                                                <a class="small" href="password.html">Forgot Password?</a>
-                                                <input class="btn btn-primary" type="submit" value="login" href="index.php">
-                                            </div>
-                                        </form>
-                                    </div>
-                                    <div class="card-footer text-center py-3">
-                                        <div class="small"><a href="register.html">Need an account? Sign up!</a></div>
-                                    </div>
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login Admin — Berita Indonesia</title>
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-primary">
+    <div id="layoutAuthentication">
+        <div id="layoutAuthentication_content">
+            <main>
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-5">
+                            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                <div class="card-header">
+                                    <h1 class="text-center font-weight-light my-4 h3">Login Admin</h1>
+                                </div>
+                                <div class="card-body">
+                                    <?php if ($notice !== ''): ?>
+                                        <div class="alert alert-<?= admin_h($noticeType); ?>" role="alert"><?= admin_h($notice); ?></div>
+                                    <?php endif; ?>
+                                    <form method="POST" action="../controllers/login_admin.php" autocomplete="on">
+                                        <div class="form-floating mb-3">
+                                            <input class="form-control" required name="username" value="<?= admin_h($username); ?>" id="inputUsername" type="text" autocomplete="username" placeholder="Username">
+                                            <label for="inputUsername">Username</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <input class="form-control" required name="password" id="inputPassword" type="password" autocomplete="current-password" placeholder="Password">
+                                            <label for="inputPassword">Password</label>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-end mt-4 mb-0">
+                                            <button class="btn btn-primary" type="submit">Masuk</button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="card-footer text-center py-3">
+                                    <div class="small text-muted">Halaman administrasi Berita Indonesia</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </main>
-            </div>
-            <div id="layoutAuthentication_footer">
-                <footer class="py-4 bg-light mt-auto">
-                    <div class="container-fluid px-4">
-                        <div class="d-flex align-items-center justify-content-between small">
-                            <div class="text-muted">Copyright &copy; Achmad Rifky 2022</div>
-                            <div>
-                                <a href="#">Privacy Policy</a>
-                                &middot;
-                                <a href="#">Terms &amp; Conditions</a>
-                            </div>
-                        </div>
-                    </div>
-                </footer>
-            </div>
+                </div>
+            </main>
         </div>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-        <script src="js/scripts.js"></script>
-    </body>
+        <div id="layoutAuthentication_footer">
+            <footer class="py-4 bg-light mt-auto">
+                <div class="container-fluid px-4">
+                    <div class="small text-center text-muted">Berita Indonesia &copy; <?= date('Y'); ?></div>
+                </div>
+            </footer>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
-
-<?php
-    }
-?>
