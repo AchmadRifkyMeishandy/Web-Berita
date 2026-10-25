@@ -1,58 +1,77 @@
 <?php
-@SESSION_START();
-include "connect.php";
+session_start();
+require_once __DIR__ . '/connect.php';
 
-if (isset($_GET['username']) )
-{
-	$username = @$_GET['username'];
-	$password = @$_GET['password'];
-	$level= @$_POST['level_user'];
-   	$isi_form="username=$username";
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: ../admin/login.php');
+    exit;
 }
 
-if($username!='' && $password!='')
-{				
-	$sql_admin=mysqli_query($db, "select*from users where username='$username' and password='$password' ");
-	$data_admin=mysqli_fetch_array($sql_admin);
-	$cek_admin=mysqli_num_rows($sql_admin);
-								
-	if($cek_admin >= 1 ){
-		if($data_admin['level_user'] == "admin")
-		{
-			@$_SESSION['admin']=$data_admin['id_user'];
-			
-?>
-			<script language="javascript"> 
-				alert("Selamat Datang <?= $data_admin['nama_user']?> \n Anda Login sebagai Admin."); 
-	 			window.location="../admin/index.php";  
- 			</script>;
-<?php
-			
-		}
-	}
-	else
-	{
-		if($username != $data_admin['username'])
-		{
-								
-?>
-			<script type="text/javascript">
-	        	window.location="../admin/login.php?notif=username&<?php echo $isi_form;?>";
-	        </script>
-                                
-<?php
-		}
-		else if($password != $data_admin['password'])
-		{
-?>
-            <script type="text/javascript">
-				window.location="../admin/login.php?notif=password&<?php echo $isi_form;?>";
-	        </script>
-<?php
-		}
-							
-	}
-							
+$usernameInput = $_POST['username'] ?? '';
+$passwordInput = $_POST['password'] ?? '';
+$username = is_string($usernameInput) ? trim($usernameInput) : '';
+$password = is_string($passwordInput) ? $passwordInput : '';
+
+if ($username === '' || $password === '') {
+    header('Location: ../admin/login.php?notif=invalid');
+    exit;
 }
 
-?>
+$statement = mysqli_prepare(
+    $db,
+    'SELECT id_user, username, password, level_user, nama_user
+     FROM users
+     WHERE username = ?
+     LIMIT 1'
+);
+
+if (!$statement) {
+    error_log('Could not prepare admin login query.');
+    header('Location: ../admin/login.php?notif=error');
+    exit;
+}
+
+mysqli_stmt_bind_param($statement, 's', $username);
+mysqli_stmt_execute($statement);
+$result = mysqli_stmt_get_result($statement);
+$user = $result ? mysqli_fetch_assoc($result) : null;
+mysqli_stmt_close($statement);
+
+if (!$user || $user['level_user'] !== 'admin') {
+    header('Location: ../admin/login.php?notif=invalid');
+    exit;
+}
+
+$storedPassword = (string) $user['password'];
+$passwordValid = password_verify($password, $storedPassword);
+$legacyPlaintextPassword = false;
+
+// Transitional support for old local databases that stored plaintext passwords.
+// A successful legacy login upgrades the stored value to a password hash.
+if (!$passwordValid && $storedPassword !== '' && hash_equals($storedPassword, $password)) {
+    $passwordValid = true;
+    $legacyPlaintextPassword = true;
+}
+
+if (!$passwordValid) {
+    header('Location: ../admin/login.php?notif=invalid');
+    exit;
+}
+
+if ($legacyPlaintextPassword) {
+    $newHash = password_hash($password, PASSWORD_DEFAULT);
+    $updateStatement = mysqli_prepare($db, 'UPDATE users SET password = ? WHERE id_user = ?');
+    if ($updateStatement) {
+        $userId = (int) $user['id_user'];
+        mysqli_stmt_bind_param($updateStatement, 'si', $newHash, $userId);
+        mysqli_stmt_execute($updateStatement);
+        mysqli_stmt_close($updateStatement);
+    }
+}
+
+session_regenerate_id(true);
+$_SESSION['admin'] = (int) $user['id_user'];
+$_SESSION['admin_name'] = (string) $user['nama_user'];
+
+header('Location: ../admin/index.php');
+exit;
