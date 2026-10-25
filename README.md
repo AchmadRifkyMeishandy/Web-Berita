@@ -14,7 +14,7 @@ A PHP and MySQL web application for publishing and reading Indonesian news. The 
 
 - **Backend:** PHP
 - **Database:** MySQL / MariaDB with MySQLi
-- **Frontend:** HTML, CSS, JavaScript, Bootstrap-based styling
+- **Frontend:** HTML, CSS, JavaScript, Bootstrap 5, responsive editorial styling
 - **Local development:** XAMPP or another PHP and MySQL environment
 
 ## Project Structure
@@ -51,10 +51,19 @@ A PHP and MySQL web application for publishing and reading Indonesian news. The 
 
 > The connection file is configured for local development. Do not commit real production credentials to source control.
 
+## Akun Demo Lokal
+
+Database contoh menyediakan akun khusus untuk pengujian lokal:
+
+- **Username:** `demo_admin`
+- **Password:** `DemoOnly-Change-2026!`
+
+Akun ini hanya untuk latihan pada komputer lokal. Ganti password dan periksa semua konfigurasi sebelum aplikasi dipasang pada server publik.
+
 ## Database
 
 The SQL dump includes the tables and sample records needed to explore the project locally. The database includes news, categories, comments, and comment replies.
 
 ## Project Status
 
-This is a portfolio and learning project. Before deploying it to a public production environment, review authentication and authorization, input validation, SQL query safety, file handling, and application configuration.
+This is a portfolio and learning project. The public article and comment flows use parameterized queries and output escaping; admin login uses POST, prepared statements, and hashed-password verification with a one-time compatibility upgrade for legacy local passwords. Before any production use, review all admin CRUD endpoints, authorization, CSRF protection, file uploads, and deployment configuration.
