@@ -47,8 +47,10 @@ $passwordValid = password_verify($password, $storedPassword);
 $legacyPlaintextPassword = false;
 
 // Transitional support for old local databases that stored plaintext passwords.
-// A successful legacy login upgrades the stored value to a password hash.
-if (!$passwordValid && $storedPassword !== '' && hash_equals($storedPassword, $password)) {
+// Only allow this path when the stored value is not already a recognized password hash.
+$passwordInfo = password_get_info($storedPassword);
+$isRecognizedHash = !empty($passwordInfo['algo']);
+if (!$passwordValid && !$isRecognizedHash && $storedPassword !== '' && hash_equals($storedPassword, $password)) {
     $passwordValid = true;
     $legacyPlaintextPassword = true;
 }
