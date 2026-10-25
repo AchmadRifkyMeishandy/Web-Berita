@@ -169,6 +169,9 @@ if ($article) {
         mysqli_stmt_close($replyStatement);
     }
 }
+if (!$article) {
+    http_response_code(404);
+}
 ?>
 <!doctype html>
 <html lang="id">
@@ -185,7 +188,6 @@ if ($article) {
     <a class="news-article__back" href="index.php"><i class="bi bi-arrow-left" aria-hidden="true"></i> Kembali ke beranda</a>
 
     <?php if (!$article): ?>
-        <?php http_response_code(404); ?>
         <div class="news-empty">
             <h1>Berita tidak ditemukan</h1>
             <p>Tautan yang kamu buka tidak cocok dengan artikel yang tersedia.</p>
