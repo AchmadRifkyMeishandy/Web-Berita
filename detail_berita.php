@@ -90,7 +90,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $article) {
                     mysqli_stmt_bind_param($parentStatement, 'is', $commentId, $kodeBerita);
                     mysqli_stmt_execute($parentStatement);
                     $parentResult = mysqli_stmt_get_result($parentStatement);
-                    $parentExists = $parentResult && mysqli_fetch_assoc($parentResult) !== null;
+                    $parentRow = $parentResult ? mysqli_fetch_assoc($parentResult) : null;
+                    $parentExists = is_array($parentRow);
                     mysqli_stmt_close($parentStatement);
                 }
 
