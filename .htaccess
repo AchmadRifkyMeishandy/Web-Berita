@@ -1,0 +1,21 @@
+# Keamanan root proyek ketika folder berada di C:\laragon\www.
+# Untuk deployment, DocumentRoot Apache tetap paling baik diarahkan ke /public.
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Buka base URL proyek lalu arahkan ke public/.
+    RewriteRule ^$ public/ [R=302,L]
+
+    # Folder internal tidak boleh diakses langsung dari browser.
+    RewriteRule ^(\.git|vendor|app|config|database|docs|routes|storage|tools)(/|$) - [F,L,NC]
+
+    # Blokir file konfigurasi dan dokumentasi internal yang tidak diperlukan publik.
+    RewriteRule ^(bootstrap\.php|\.env(?:\..*)?|composer\.(?:json|lock)|README\.md|MULAI-DI-SINI\.md)$ - [F,L,NC]
+</IfModule>
+
+# Perlindungan tambahan untuk file environment jika mod_rewrite tidak tersedia.
+<FilesMatch "^\.env(?:\..*)?$">
+    Require all denied
+</FilesMatch>

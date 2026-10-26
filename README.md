@@ -1,69 +1,117 @@
-# Indonesian News Portal
+# Web-Berita MVC
 
-A PHP and MySQL web application for publishing and reading Indonesian news. The project includes a public-facing news website and an administration area for managing content.
+Portal berita berbasis **PHP native + MySQL/MariaDB** yang direfaktor menggunakan pola MVC. Proyek ini dibuat sebagai portofolio pembelajaran: nama variabel dan file konsisten, query terpusat di Model, tampilan dipisahkan ke View, dan request dipetakan melalui Router.
 
-## Features
+> **CSS dipertahankan.** File `news-modern.css`, `styles.css`, dan `news-admin-modern.css` disalin dari versi sebelumnya tanpa mengubah isi CSS. Struktur markup dan lokasi asset dipindahkan agar sesuai dengan MVC; desain visual tidak dimaksudkan untuk dirombak.
 
-- Browse news and open individual article details.
-- Organize articles by category.
-- Submit reader comments and manage comments through the administration area.
-- Manage news articles and categories from the admin pages.
-- Store news, categories, comments, and comment replies in a MySQL database.
+## Stack
 
-## Tech Stack
+- PHP 8.1+ (disarankan PHP 8.3 di Laragon)
+- MySQL / MariaDB dan ekstensi PDO MySQL
+- HTML, CSS yang sudah ada, Bootstrap dan Bootstrap Icons dari CDN
+- Tanpa framework PHP dan tanpa dependency Composer wajib
 
-- **Backend:** PHP
-- **Database:** MySQL / MariaDB with MySQLi
-- **Frontend:** HTML, CSS, JavaScript, Bootstrap 5, responsive editorial styling
-- **Local development:** XAMPP or another PHP and MySQL environment
+## Quick start — instalasi baru
 
-## Project Structure
+1. Ekstrak proyek ke `C:\laragon\www\Web-Berita-MVC`.
+2. Di phpMyAdmin, buat database bernama `beritaindonesia_mvc`.
+3. Pilih database tersebut dan impor `database/schema.sql`.
+4. Impor `database/seed_demo.sql` untuk mengisi data demo. Jangan impor seed jika kamu akan memigrasikan data dari database lama.
+5. Salin `.env.example` menjadi `.env`. Periksa nama database, username, dan password MySQL.
+6. Jalankan Apache dan MySQL di Laragon.
+7. Buka `http://localhost/Web-Berita-MVC/` (aturan Apache akan mengarahkan ke `public/`). Jika redirect tidak bekerja pada konfigurasi Apache kamu, gunakan `http://localhost/Web-Berita-MVC/public/`.
 
-| Path | Purpose |
-| --- | --- |
-| `index.php` | Public homepage |
-| `berita.php` | News listing page |
-| `detail_berita.php` | News detail page |
-| `admin/` | Administration pages for news, categories, and comments |
-| `controllers/` | Database connection and request-processing scripts |
-| `database/beritaindonesia.sql` | SQL dump used to create and populate the database |
-| `css/`, `js/` | Stylesheets and JavaScript |
-| `assets/`, `images/` | Images and other static assets |
-| `user/` | User-related pages and resources |
+Jika folder proyekmu berbeda, sesuaikan bagian alamat setelah `localhost`. Cara terbaik untuk deployment adalah membuat virtual host Laragon yang DocumentRoot-nya menunjuk langsung ke folder `public`. File `.htaccess` di root proyek juga memblokir akses langsung ke folder internal, tetapi aturan ini membutuhkan dukungan `mod_rewrite` Apache untuk perlindungan folder.
 
-## Run Locally
+### Akun demo
 
-### Requirements
+- Username: `demo_admin`
+- Password: `DemoOnly-Change-2026!`
 
-- PHP with the MySQLi extension
-- MySQL or MariaDB
-- Apache or another PHP-capable web server
+Akun ini hanya untuk lingkungan lokal/portofolio. Ganti password sebelum demo publik atau deployment. Jangan mengunggah `.env` ke Git.
 
-### Setup
+## Migrasikan data proyek lama dengan aman
 
-1. Clone or download this repository into your web server's document root (for XAMPP, this is commonly `htdocs`).
-2. Start Apache and MySQL from your local development environment.
-3. Open phpMyAdmin and create a database named `beritaindonesia`.
-4. Import `database/beritaindonesia.sql` into that database.
-5. Check `controllers/connect.php` and update the database host, username, password, and database name to match your local setup.
-6. Open the project in your browser, for example: `http://localhost/Web-Berita/`.
-7. To open the admin sign-in page, visit `http://localhost/Web-Berita/admin/login.php`.
+Jangan menjalankan migrasi pada database sumber. Migrator menyalin data ke database tujuan baru dan tidak mengubah database lama.
 
-> The connection file is configured for local development. Do not commit real production credentials to source control.
+1. Backup database lama melalui phpMyAdmin (Export/Quick/SQL).
+2. Buat database tujuan `beritaindonesia_mvc` yang kosong.
+3. Impor **hanya** `database/schema.sql` ke database tujuan. Jangan impor `seed_demo.sql` dalam jalur ini.
+4. Salin `.env.example` menjadi `.env`. Atur `DB_NAME=beritaindonesia_mvc` untuk tujuan dan `LEGACY_DB_NAME=beritaindonesia` untuk sumber. Sesuaikan host, user, password bila berbeda.
+5. Jika database lama berada di instalasi/folder proyek lain, atur `LEGACY_IMAGE_DIR` ke folder `images` proyek lama. Jika kosong, migrator mencoba mencari gambar di `public/assets/images` proyek MVC.
+6. Buka PowerShell di root proyek lalu jalankan:
 
-## Akun Demo Lokal
+   ```powershell
+   php tools/migrate_legacy_database.php
+   ```
 
-Database contoh menyediakan akun khusus untuk pengujian lokal:
+7. Migrator memeriksa relasi sebelum menulis. Jika ada kategori/artikel/komentar/balasan yang tidak memiliki induk valid, proses berhenti dan menjelaskan ID yang perlu ditinjau. Jangan abaikan laporan tersebut; perbaiki datanya lalu jalankan kembali.
+8. Jika sukses, periksa jumlah data pada database tujuan dan buka website.
 
-- **Username:** `demo_admin`
-- **Password:** `DemoOnly-Change-2026!`
+Migrator sengaja menolak berjalan jika database tujuan tidak kosong untuk mencegah duplikasi. Database lama tidak diubah. Buat backup terlebih dahulu dan jangan menjalankan tool pada database produksi tanpa menguji salinan.
 
-Akun ini hanya untuk latihan pada komputer lokal. Ganti password dan periksa semua konfigurasi sebelum aplikasi dipasang pada server publik.
+## Struktur folder
 
-## Database
+```text
+Web-Berita-MVC/
+├── app/
+│   ├── Controllers/        # Menerima request dan mengatur alur
+│   ├── Core/               # Router, database, view, CSRF, base controller
+│   ├── Models/             # Query dan akses data
+│   ├── Services/           # Proses khusus, seperti upload gambar
+│   ├── Views/              # HTML untuk publik dan admin
+│   └── helpers.php         # Helper escaping, URL, tanggal, flash
+├── config/database.php     # Konfigurasi koneksi dari environment
+├── database/               # Skema SQL, data demo, DBML
+├── docs/                   # Panduan arsitektur dan database
+├── public/                 # Entry point browser dan aset statis
+├── routes/web.php           # Peta route + HTTP method
+├── storage/logs/           # Lokasi laporan lokal
+└── tools/                  # Tool migrasi CLI
+```
 
-The SQL dump includes the tables and sample records needed to explore the project locally. The database includes news, categories, comments, and comment replies.
+## Cara mengikuti alur kode di VS Code
 
-## Project Status
+### Contoh klik kategori
 
-This is a portfolio and learning project. The public article and comment flows use parameterized queries and output escaping; admin login uses POST, prepared statements, and hashed-password verification with a one-time compatibility upgrade for legacy local passwords. Before any production use, review all admin CRUD endpoints, authorization, CSRF protection, file uploads, and deployment configuration.
+1. `app/Views/partials/public-header.php` membuat tautan kategori menggunakan `url('articles.index', ['category_id' => ...])`.
+2. `routes/web.php` memetakan nama route `articles.index` ke `ArticleController::index()`.
+3. `app/Controllers/ArticleController.php` membaca dan memvalidasi `category_id`.
+4. `app/Models/Article.php` mengambil artikel dengan query terparameterisasi dan JOIN kategori.
+5. `app/Views/public/articles/index.php` mengulang data artikel dan membuat kartu.
+6. Pengunjung mengeklik kartu, kemudian link menuju route `articles.show` dan `ArticleController::show()`.
+
+### Contoh login admin dan tambah berita
+
+1. Form login ada di `app/Views/admin/auth/login.php`.
+2. Request POST masuk ke route `admin.login` di `routes/web.php`.
+3. `app/Controllers/Admin/AuthController.php` memeriksa CSRF, username, role dan password hash.
+4. `app/Models/User.php` mengambil akun dari database.
+5. Setelah masuk, `app/Controllers/Admin/DashboardController.php` menampilkan dashboard.
+6. Form tambah ada di `app/Views/admin/articles/form.php`.
+7. `Admin/ArticleController.php` memvalidasi data dan meminta `ImageUploadService` memvalidasi/menyimpan gambar.
+8. `app/Models/Article.php` menjalankan INSERT dengan prepared statement.
+
+Di VS Code, gunakan `Ctrl+Shift+F` untuk mencari nama route, `url('admin.articles.store')` untuk melihat form action, atau `Article::create` untuk mengikuti query. Lihat `docs/ARCHITECTURE.md` untuk diagram alur.
+
+## Keputusan keamanan
+
+- Query memakai PDO prepared statements.
+- Output HTML di-escape menggunakan helper `e()`.
+- Perubahan data menggunakan POST dan token CSRF.
+- Route admin memeriksa session dan role di server.
+- Password diverifikasi dengan `password_verify()`.
+- Upload membatasi MIME type dan ukuran serta menggunakan nama acak.
+- Kategori yang masih dipakai artikel tidak bisa dihapus (foreign key RESTRICT).
+- Hapus artikel menghapus komentar dan balasan terkait melalui foreign key CASCADE.
+
+## Catatan batasan saat ini
+
+- URL dikirim melalui query `?route=...` agar langsung bekerja di Laragon tanpa mengharuskan konfigurasi rewrite. Virtual host opsional dapat mengarahkan DocumentRoot ke `public`.
+- Tidak ada fitur author artikel karena skema lama tidak menyimpan relasi penulis; migrasi tidak akan mengarang kepemilikan artikel.
+- Migrasi menolak data relasi orphan sebelum penulisan. Untuk data bermasalah, perlu peninjauan manual.
+- Pengujian sintaks bisa dilakukan secara lokal; pengujian integrasi tetap memerlukan koneksi database dan browser Laragon.
+
+## License dan data
+
+Gunakan data demo untuk demonstrasi. Periksa lisensi gambar dan sumber artikel sebelum menerbitkan portofolio secara publik.
