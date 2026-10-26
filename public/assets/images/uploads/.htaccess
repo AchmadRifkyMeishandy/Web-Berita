@@ -1,0 +1,4 @@
+Options -Indexes -ExecCGI
+<FilesMatch "\.(php|phtml|phar|cgi|pl|py|jsp|asp|aspx|sh)$">
+    Require all denied
+</FilesMatch>

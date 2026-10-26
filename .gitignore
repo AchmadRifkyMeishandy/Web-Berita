@@ -1,19 +1,7 @@
-# Local environment and secrets
 .env
-.env.*
-!.env.example
-
-# PHP and JavaScript dependencies
 /vendor/
-/node_modules/
-
-# Logs and temporary files
-*.log
-*.tmp
-*.bak
-
-# Operating system and editor files
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
+/storage/logs/*.log
+/storage/logs/*.json
+/public/assets/images/uploads/*
+!/public/assets/images/uploads/.gitkeep
+!/public/assets/images/uploads/.htaccess

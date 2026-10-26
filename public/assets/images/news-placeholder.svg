@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Gambar berita</title>
+  <desc id="desc">Ilustrasi kartu berita dengan simbol dokumen dan garis editorial.</desc>
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e7f0f8"/>
+      <stop offset="1" stop-color="#d2e3f1"/>
+    </linearGradient>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1d5b8f"/>
+      <stop offset="1" stop-color="#102c4b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#paper)"/>
+  <circle cx="1000" cy="120" r="230" fill="#fff" opacity=".32"/>
+  <circle cx="180" cy="610" r="270" fill="#fff" opacity=".28"/>
+  <rect x="440" y="160" width="320" height="355" rx="28" fill="#fff" stroke="#bed2e4" stroke-width="3"/>
+  <rect x="478" y="202" width="96" height="96" rx="24" fill="url(#tile)"/>
+  <text x="526" y="264" font-family="Arial, sans-serif" font-size="40" font-weight="700" text-anchor="middle" fill="#fff">BI</text>
+  <rect x="600" y="215" width="118" height="14" rx="7" fill="#9db9d1"/>
+  <rect x="600" y="246" width="86" height="12" rx="6" fill="#d2e0ec"/>
+  <rect x="478" y="334" width="244" height="16" rx="8" fill="#9db9d1"/>
+  <rect x="478" y="370" width="210" height="12" rx="6" fill="#d2e0ec"/>
+  <rect x="478" y="398" width="226" height="12" rx="6" fill="#d2e0ec"/>
+  <rect x="478" y="426" width="160" height="12" rx="6" fill="#d2e0ec"/>
+</svg>
